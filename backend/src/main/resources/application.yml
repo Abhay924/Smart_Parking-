@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: smart-parking-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/smart_parking
+    username: postgres
+    password: abhay93055
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+flyway:
+  enabled: true
+  validate-on-migrate: true
