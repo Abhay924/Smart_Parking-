@@ -2,6 +2,8 @@ package com.smartparking.parking.controller;
 
 import com.smartparking.parking.dto.ParkingEntryRequest;
 import com.smartparking.parking.dto.ParkingEntryResponse;
+import com.smartparking.parking.dto.ParkingExitRequest;
+import com.smartparking.parking.dto.ParkingExitResponse;
 import com.smartparking.parking.service.ParkingService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -23,5 +25,12 @@ public class ParkingController {
             @Valid @RequestBody ParkingEntryRequest request
     ) {
         return parkingService.createEntry(request);
+    }
+
+    @PostMapping("/exit")
+    public ParkingExitResponse createExit(
+            @Valid @RequestBody ParkingExitRequest request
+    ) {
+        return parkingService.createExit(request);
     }
 }

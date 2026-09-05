@@ -19,12 +19,21 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf.disable())
+
+                .httpBasic(httpBasic -> {})
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/actuator/health",
-                                "/api/v1/vehicles/**"
+                                "/api/v1/vehicles/**",
+                                "/api/v1/parking/**"
                         ).permitAll()
-                        .anyRequest().authenticated()
+
+                        .requestMatchers("/api/v1/admin/**")
+                        .hasRole("ADMIN")
+
+                        .anyRequest()
+                        .authenticated()
                 );
 
         return http.build();
@@ -34,8 +43,8 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService() {
 
         UserDetails admin = User
-                .withUsername("dev-admin")
-                .password("{noop}dev-password")
+                .withUsername("abhay")
+                .password("{noop}abhay123")
                 .roles("ADMIN")
                 .build();
 

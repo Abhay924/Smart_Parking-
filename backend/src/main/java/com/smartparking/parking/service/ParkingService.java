@@ -2,6 +2,8 @@ package com.smartparking.parking.service;
 
 import com.smartparking.parking.dto.ParkingEntryRequest;
 import com.smartparking.parking.dto.ParkingEntryResponse;
+import com.smartparking.parking.dto.ParkingExitRequest;
+import com.smartparking.parking.dto.ParkingExitResponse;
 import com.smartparking.parking.entity.ParkingSession;
 import com.smartparking.parking.entity.ParkingSessionStatus;
 import com.smartparking.parking.repository.ParkingSessionRepository;
@@ -10,6 +12,7 @@ import com.smartparking.vehicle.repository.VehicleRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 
 @Service
@@ -66,6 +69,52 @@ public class ParkingService {
                 vehicle.getPlateNumber(),
                 saved.getEntryTime(),
                 saved.getStatus().name()
+        );
+    }
+
+    @Transactional
+    public ParkingExitResponse createExit(ParkingExitRequest request) {
+
+        String plateNumber = request.plateNumber()
+                .trim()
+                .toUpperCase();
+
+        Vehicle vehicle = vehicleRepository
+                .findByPlateNumber(plateNumber)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Vehicle not registered: " + plateNumber
+                        )
+                );
+
+        ParkingSession session = parkingSessionRepository
+                .findByVehicleIdAndStatus(
+                        vehicle.getId(),
+                        ParkingSessionStatus.ACTIVE
+                )
+                .orElseThrow(() ->
+                        new IllegalStateException(
+                                "No active parking session found for vehicle: "
+                                        + plateNumber
+                        )
+                );
+
+        OffsetDateTime exitTime = OffsetDateTime.now();
+
+        session.markExited(exitTime);
+
+        long durationMinutes = Duration
+                .between(session.getEntryTime(), exitTime)
+                .toMinutes();
+
+        return new ParkingExitResponse(
+                session.getId(),
+                vehicle.getId(),
+                vehicle.getPlateNumber(),
+                session.getEntryTime(),
+                exitTime,
+                durationMinutes,
+                session.getStatus().name()
         );
     }
 }
