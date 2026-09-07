@@ -1,6 +1,3 @@
--- ============================================================
--- V3 - Make Parking Pricing Configurable
--- ============================================================
 
 ALTER TABLE parking_rates
     ADD COLUMN billing_mode VARCHAR(20) NOT NULL DEFAULT 'PER_HOUR';

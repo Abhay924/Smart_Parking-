@@ -27,3 +27,9 @@ management:
 flyway:
   enabled: true
   validate-on-migrate: true
+
+logging:
+  level:
+    org.springframework.web: DEBUG
+    org.springframework.http.converter: DEBUG
+    com.smartparking: DEBUG

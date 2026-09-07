@@ -1,14 +1,3 @@
--- ============================================================
--- SMART PARKING SYSTEM
--- V1 - Initial Database Schema
--- PostgreSQL
--- ============================================================
-
-
--- ============================================================
--- 1. VEHICLES
--- Stores unique vehicles identified by their registration plate
--- ============================================================
 
 CREATE TABLE vehicles (
     id BIGSERIAL PRIMARY KEY,
