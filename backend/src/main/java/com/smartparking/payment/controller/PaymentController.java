@@ -1,3 +1,4 @@
+
 package com.smartparking.payment.controller;
 
 import com.smartparking.payment.entity.Payment;
@@ -53,27 +54,11 @@ public class PaymentController {
         );
     }
 
-    @PostMapping("/{paymentId}/success")
-    public ResponseEntity<PaymentResponse> markSuccess(
-            @PathVariable Long paymentId,
-            @RequestParam String providerPaymentId,
-            @RequestParam(required = false) String paymentMethod
-    ) {
-        Payment payment = paymentService.markPaymentSuccess(
-                paymentId,
-                providerPaymentId,
-                paymentMethod
-        );
-
-        return ResponseEntity.ok(
-                PaymentResponse.from(payment)
-        );
-    }
-
     public record CreatePaymentRequest(
             Long billId,
             String provider
-    ) {}
+    ) {
+    }
 
     public record PaymentResponse(
             Long id,
