@@ -6,7 +6,6 @@ import com.smartparking.payment.entity.PaymentStatus;
 import com.smartparking.payment.repository.PaymentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 
 @Service
@@ -49,12 +48,6 @@ public class PaymentService {
 
             return existingPayment;
         }
-
-        /*
-         * IMPORTANT:
-         * Amount comes from the server-side Bill.
-         * Never trust an amount sent by frontend.
-         */
         BigDecimal amount = bill.getTotalAmount();
 
         if (amount == null || amount.signum() < 0) {
@@ -118,8 +111,6 @@ public class PaymentService {
                     "Provider payment ID is required"
             );
         }
-
-        
 
         payment.markSuccess(
                 providerPaymentId,

@@ -1,12 +1,8 @@
 from pathlib import Path
-
 from app.detection.detector import PlateDetector
 from app.ocr.recognizer import PlateRecognizer
 
-
 TEST_DIR = Path("datasets/test")
-
-
 def main():
     detector = PlateDetector()
     images = sorted(TEST_DIR.glob("*.jpg"))
@@ -42,7 +38,6 @@ def main():
                 continue
 
             confidence = result["confidence"]
-
             if confidence >= 0.85:
                 status = "PASS"
             elif confidence >= 0.70:
@@ -55,7 +50,6 @@ def main():
             print(f"OCR         : {result['ocr_confidence']:.4f}")
             print(f"Overall     : {confidence:.4f}")
             print(f"Status      : {status}")
-
             results.append({
                 "image": image_path.name,
                 "plate": result["plate_number"],
@@ -65,7 +59,6 @@ def main():
 
         except Exception as exc:
             print(f"ERROR       : {exc}")
-
             results.append({
                 "image": image_path.name,
                 "plate": None,
@@ -99,9 +92,7 @@ def main():
 
     if total:
         print(f"PASS % : {(passed / total) * 100:.2f}%")
-
     print("=" * 70)
-
 
 if __name__ == "__main__":
     main()

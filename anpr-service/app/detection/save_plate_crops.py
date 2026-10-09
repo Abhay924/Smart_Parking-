@@ -1,9 +1,6 @@
 from pathlib import Path
-
 import cv2
-
 from app.detection.detector import PlateDetector
-
 
 INPUT_DIR = Path("datasets/test")
 OUTPUT_DIR = Path("datasets/debug_crops")
@@ -13,32 +10,26 @@ TARGET_IMAGES = [
     "car5.jpg",
 ]
 
-
 def main():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
     detector = PlateDetector()
-
     print("=" * 80)
     print("SMART PARKING - PLATE CROP DIAGNOSTIC")
     print("=" * 80)
 
     for image_name in TARGET_IMAGES:
         image_path = INPUT_DIR / image_name
-
         print(f"\nProcessing: {image_name}")
         print("-" * 80)
 
         if not image_path.exists():
             print(f"ERROR: Image not found: {image_path}")
             continue
-
         image = cv2.imread(str(image_path))
 
         if image is None:
             print("ERROR: Unable to read image")
             continue
-
         detections = detector.detect(str(image_path))
 
         if not detections:
@@ -74,14 +65,11 @@ def main():
 
         print(f"Detection confidence: {best_confidence:.4f}")
         print(f"Bounding box: {bounding_box}")
-
         x1 = int(getattr(bounding_box, "x1", 0))
         y1 = int(getattr(bounding_box, "y1", 0))
         x2 = int(getattr(bounding_box, "x2", 0))
         y2 = int(getattr(bounding_box, "y2", 0))
-
         height, width = image.shape[:2]
-
         x1 = max(0, min(x1, width - 1))
         y1 = max(0, min(y1, height - 1))
         x2 = max(0, min(x2, width))
@@ -92,7 +80,6 @@ def main():
             continue
 
         crop = image[y1:y2, x1:x2]
-
         if crop.size == 0:
             print("Empty crop")
             continue

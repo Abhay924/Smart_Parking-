@@ -1,12 +1,9 @@
 from dataclasses import dataclass
-
-
 @dataclass(frozen=True)
 class OCRLanguage:
     name: str
     code: str
     script: str
-
 
 INDIC_OCR_LANGUAGES = (
     OCRLanguage("English", "eng", "Latin"),
@@ -22,15 +19,10 @@ INDIC_OCR_LANGUAGES = (
     OCRLanguage("Telugu", "tel", "Telugu"),
 )
 
-
 def get_language_codes():
     return [language.code for language in INDIC_OCR_LANGUAGES]
-
-
 def get_language_names():
     return [language.name for language in INDIC_OCR_LANGUAGES]
-
-
 def get_languages_by_script(script: str):
     return [
         language

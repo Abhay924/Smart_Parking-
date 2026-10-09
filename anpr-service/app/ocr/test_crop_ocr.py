@@ -1,17 +1,11 @@
 from pathlib import Path
-
 import cv2
-
 from app.detection.detector import PlateDetector
 from app.ocr.recognizer import PlateRecognizer
-
-
 CROP_DIR = Path("datasets/debug_crops")
-
 
 def make_variants(image):
     variants = {}
-
     variants["original"] = image
 
     variants["2x"] = cv2.resize(
@@ -97,7 +91,6 @@ def make_variants(image):
     )
 
     return variants
-
 
 def run_ocr(detector, image):
     """
@@ -245,7 +238,6 @@ def main():
         )
 
     print("=" * 90)
-
 
 if __name__ == "__main__":
     main()

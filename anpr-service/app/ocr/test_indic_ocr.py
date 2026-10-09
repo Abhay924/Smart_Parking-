@@ -1,37 +1,27 @@
 from pathlib import Path
-
 import cv2
-
 from app.ocr.indic_fallback import IndicFallbackOCR
 
-
 CROP_DIR = Path("datasets/debug_crops")
-
 TARGET_IMAGES = [
     "car4_plate_crop.jpg",
     "car5_plate_crop.jpg",
 ]
 
-
 def main():
     print("=" * 100)
     print("SMART PARKING - GENERIC INDIC MULTILINGUAL OCR TEST")
     print("=" * 100)
-
     ocr = IndicFallbackOCR()
-
     for image_name in TARGET_IMAGES:
         image_path = CROP_DIR / image_name
-
         print(f"\nIMAGE: {image_name}")
         print("-" * 100)
 
         if not image_path.exists():
             print(f"ERROR: File not found: {image_path}")
             continue
-
         image = cv2.imread(str(image_path))
-
         if image is None:
             print("ERROR: Unable to read image")
             continue
@@ -40,7 +30,6 @@ def main():
             f"Size: "
             f"{image.shape[1]} x {image.shape[0]}"
         )
-
         candidates = ocr.recognize(image)
 
         if not candidates:
@@ -77,12 +66,10 @@ def main():
         print(f"Script         : {best.script}")
         print(f"Preprocessing  : {best.preprocessing}")
         print(f"PSM            : {best.psm}")
-
     print("\n")
     print("=" * 100)
     print("TEST COMPLETE")
     print("=" * 100)
-
 
 if __name__ == "__main__":
     main()

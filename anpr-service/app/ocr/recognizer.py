@@ -1,24 +1,17 @@
 from typing import Any
-
-
 class PlateRecognizer:
-
     @staticmethod
     def extract(result: Any):
 
         if not result:
             return None
-
         best = None
         best_score = 0.0
-
         for detection in result:
-
             ocr = getattr(detection, "ocr", None)
 
             if ocr is None:
                 continue
-
             text = getattr(ocr, "text", None)
             confidence = getattr(ocr, "confidence", None)
 
@@ -35,8 +28,6 @@ class PlateRecognizer:
                 getattr(detection.detection, "confidence", 0.0)
             )
 
-            # Use the lower of detection and OCR confidence
-            # as the conservative overall confidence.
             overall_confidence = min(
                 detection_confidence,
                 ocr_confidence
@@ -65,7 +56,6 @@ class PlateRecognizer:
             return float(confidence)
 
         if isinstance(confidence, (list, tuple)):
-
             values = [
                 float(value)
                 for value in confidence

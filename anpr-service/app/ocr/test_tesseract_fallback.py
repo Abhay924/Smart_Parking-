@@ -2,12 +2,10 @@ from pathlib import Path
 import cv2
 import pytesseract
 
-
 TESSERACT_PATH = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 IMAGE_PATH = Path("datasets/test/car4.jpg")
 
 pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
-
 
 LANGUAGES = [
     "eng",
@@ -22,7 +20,6 @@ LANGUAGES = [
     "tam",
     "tel",
 ]
-
 
 def preprocess_variants(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -61,7 +58,6 @@ def clean_text(text):
         for character in text.upper()
         if character.isalnum()
     )
-
 
 def run_ocr(image, language, psm):
     config = f"--oem 1 --psm {psm}"
@@ -108,7 +104,6 @@ def run_ocr(image, language, psm):
         "parts": texts,
     }
 
-
 def main():
     if not IMAGE_PATH.exists():
         raise FileNotFoundError(
@@ -129,13 +124,11 @@ def main():
     print()
 
     variants = preprocess_variants(image)
-
     results = []
 
     for variant_name, variant_image in variants.items():
         print(f"\nPREPROCESSING: {variant_name}")
         print("-" * 80)
-
         for language in LANGUAGES:
             for psm in [6, 7, 8, 13]:
 
@@ -183,7 +176,6 @@ def main():
         )
 
     print("=" * 80)
-
 
 if __name__ == "__main__":
     main()

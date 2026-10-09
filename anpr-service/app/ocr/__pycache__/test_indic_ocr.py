@@ -1,12 +1,8 @@
 from pathlib import Path
-
 import cv2
-
 from app.ocr.indic_fallback import IndicFallbackOCR
 from app.ocr.candidate_validator import extract_best_plate_candidate
 from app.ocr.candidate_scorer import score_candidates, decide
-
-
 CROP_DIR = Path("datasets/debug_crops")
 
 TARGET_IMAGES = [
@@ -17,7 +13,6 @@ TARGET_IMAGES = [
 TOP_OCR_RESULTS = 20
 TOP_SCORED_CANDIDATES = 15
 
-
 def process_image(ocr, image_path):
     print("\n" + "=" * 100)
     print(f"IMAGE: {image_path.name}")
@@ -26,13 +21,11 @@ def process_image(ocr, image_path):
     if not image_path.exists():
         print(f"ERROR: Image not found: {image_path}")
         return
-
     image = cv2.imread(str(image_path))
 
     if image is None:
         print("ERROR: Unable to read image")
         return
-
     height, width = image.shape[:2]
     print(f"Image size: {width} x {height}")
 
@@ -63,7 +56,6 @@ def process_image(ocr, image_path):
 
     print("\nPLATE FORMAT VALIDATION")
     print("-" * 100)
-
     validation_results = []
 
     for candidate in candidates:
@@ -71,7 +63,6 @@ def process_image(ocr, image_path):
 
         if validation is None:
             continue
-
         validation_results.append(
             (
                 candidate,
@@ -83,7 +74,6 @@ def process_image(ocr, image_path):
         print("No alphanumeric plate candidates extracted.")
         print("Decision: MANUAL_REVIEW")
         return
-
     seen = set()
 
     for candidate, validation in validation_results:
@@ -93,7 +83,6 @@ def process_image(ocr, image_path):
             candidate.preprocessing,
             candidate.psm,
         )
-
         if key in seen:
             continue
 
@@ -109,19 +98,16 @@ def process_image(ocr, image_path):
 
     print("\nSCORED PLATE CANDIDATES")
     print("-" * 100)
-
     try:
         scored = score_candidates(candidates)
     except Exception as exc:
         print(f"SCORING ERROR: {exc}")
         print("Decision: MANUAL_REVIEW")
         return
-
     if not scored:
         print("No usable plate candidates found.")
         print("Decision: MANUAL_REVIEW")
         return
-
     for candidate in scored[:TOP_SCORED_CANDIDATES]:
         print(
             f"{candidate.final_score:.3f} | "
@@ -147,15 +133,12 @@ def process_image(ocr, image_path):
         "\nNOTE: This is an experimental OCR decision. "
         "Do not use it alone to open a parking gate."
     )
-
-
 def main():
     print("=" * 100)
     print("SMART PARKING - MULTILINGUAL OCR AND PLATE VALIDATION")
     print("=" * 100)
 
     ocr = IndicFallbackOCR()
-
     for image_name in TARGET_IMAGES:
         process_image(ocr, CROP_DIR / image_name)
 

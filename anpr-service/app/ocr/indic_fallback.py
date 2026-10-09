@@ -1,18 +1,14 @@
 from dataclasses import dataclass
 from typing import List
-
 import cv2
 import pytesseract
-
 from app.ocr.language_config import (
     INDIC_OCR_LANGUAGES,
 )
 
-
 TESSERACT_PATH = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
-
 
 @dataclass
 class OCRCandidate:
@@ -22,8 +18,6 @@ class OCRCandidate:
     script: str
     preprocessing: str
     psm: int
-
-
 class IndicFallbackOCR:
 
     def __init__(
@@ -105,7 +99,6 @@ class IndicFallbackOCR:
         )[1]
 
         variants["4x_otsu"] = otsu
-
         adaptive = cv2.adaptiveThreshold(
             gray,
             255,
@@ -250,10 +243,8 @@ class IndicFallbackOCR:
 
     @staticmethod
     def best(candidates):
-
         if not candidates:
             return None
-
         return max(
             candidates,
             key=lambda candidate: candidate.confidence,
@@ -261,5 +252,4 @@ class IndicFallbackOCR:
 
     @staticmethod
     def top(candidates, limit=20):
-
         return candidates[:limit]

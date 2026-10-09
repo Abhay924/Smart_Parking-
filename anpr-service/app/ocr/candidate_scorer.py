@@ -5,7 +5,6 @@ from app.ocr.candidate_validator import (
     extract_best_plate_candidate,
 )
 
-
 @dataclass(frozen=True)
 class ScoredCandidate:
     plate: str

@@ -1,5 +1,4 @@
 package com.smartparking.config;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -24,24 +23,20 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // Public endpoints
                         .requestMatchers(
                                 "/actuator/health",
                                 "/api/v1/vehicles/**",
                                 "/api/v1/parking/**"
                         ).permitAll()
 
-                        // ADMIN-only gate override operations
                         .requestMatchers(
                                 "/api/v1/gates/*/manual-open",
                                 "/api/v1/gates/*/emergency-open"
                         ).hasRole("ADMIN")
 
-                        // ADMIN-only admin APIs
                         .requestMatchers("/api/v1/admin/**")
                         .hasRole("ADMIN")
 
-                        // All remaining endpoints require authentication
                         .anyRequest()
                         .authenticated()
                 );
