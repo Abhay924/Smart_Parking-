@@ -36,3 +36,9 @@ logging:
     org.springframework.http.converter: DEBUG
     com.smartparking: DEBUG
     org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping: TRACE
+
+vehicle-verification:
+  provider: ${VEHICLE_VERIFICATION_PROVIDER:disabled}
+  api-url: ${VEHICLE_VERIFICATION_API_URL:}
+  api-key: ${VEHICLE_VERIFICATION_API_KEY:}
+  timeout-seconds: 5

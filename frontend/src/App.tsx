@@ -105,12 +105,18 @@ function formatDuration(minutes?: number | null) {
 
 function titleCase(value?: string | null) {
   if (!value) return "Unknown";
-  return value.toLowerCase().replace(/(^|\s|_)\w/g, (letter) => letter.toUpperCase()).replaceAll("_", " ");
+  return value.toLowerCase()
+  .replace(/(^|\s|_)\w/g, (letter) => letter.toUpperCase())
+  .replace(/_/g, " ");
 }
 
 function downloadCsv(filename: string, rows: string[][]) {
   const csv = rows
-    .map((row) => row.map((cell) => `"${String(cell ?? "").replaceAll('"', '""')}"`).join(","))
+    .map((row) =>
+  row.map((cell) =>
+    `"${String(cell ?? "").replace(/"/g, '""')}"`
+  ).join(",")
+)
     .join("\r\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -269,9 +275,10 @@ function App() {
   function exportCurrentData() {
     if (activePage === "Parking Sessions") {
       downloadCsv("parking-sessions.csv", [
-        ["ID", "Vehicle", "Entry time", "Exit time", "Duration minutes", "Status"],
+        ["Session ID", "Vehicle ID", "Vehicle", "Entry time", "Exit time", "Duration minutes", "Status"],
         ...filteredSessions.map((session) => [
           String(session.id),
+          String(session.vehicleId),
           session.plateNumber,
           session.entryTime,
           session.exitTime ?? "",
@@ -283,9 +290,11 @@ function App() {
     }
     if (activePage === "Billing & Payments") {
       downloadCsv("parking-bills.csv", [
-        ["Bill number", "Vehicle", "Duration minutes", "Amount", "Currency", "Status", "Generated at", "Paid at"],
+        ["Bill ID", "Bill number", "Session ID", "Vehicle", "Duration minutes", "Amount", "Currency", "Status", "Generated at", "Paid at"],
         ...filteredBills.map((bill) => [
+          String(bill.id),
           bill.billNumber,
+          String(bill.sessionId),
           bill.plateNumber,
           String(bill.durationMinutes),
           String(bill.totalAmount),
@@ -298,12 +307,16 @@ function App() {
       return;
     }
     downloadCsv("registered-vehicles.csv", [
-      ["Plate number", "Vehicle type", "Active", "Created at"],
+      ["Vehicle ID", "Plate number", "Vehicle type", "Active", "Created at", "Last session ID", "Last entry", "Last exit"],
       ...filteredVehicles.map((vehicle) => [
+        String(vehicle.id),
         vehicle.plateNumber,
         vehicle.vehicleType,
         vehicle.active ? "Yes" : "No",
         vehicle.createdAt ?? "",
+        String(sessions.filter((session) => session.plateNumber === vehicle.plateNumber).sort((a, b) => new Date(b.entryTime).getTime() - new Date(a.entryTime).getTime())[0]?.id ?? ""),
+        sessions.filter((session) => session.plateNumber === vehicle.plateNumber).sort((a, b) => new Date(b.entryTime).getTime() - new Date(a.entryTime).getTime())[0]?.entryTime ?? "",
+        sessions.filter((session) => session.plateNumber === vehicle.plateNumber).sort((a, b) => new Date(b.entryTime).getTime() - new Date(a.entryTime).getTime())[0]?.exitTime ?? "",
       ]),
     ]);
   }
@@ -495,10 +508,38 @@ function App() {
                       <label>Number plate<input className="login-input" value={exitPlate} onChange={(event) => setExitPlate(event.target.value)} placeholder="e.g. UP78AB1234" maxLength={20} required /></label>
                       <button className="secondary-button" type="submit" disabled={operationBusy}><LogOut size={15} /> Register exit</button>
                     </form>
-                    <form onSubmit={(event) => { event.preventDefault(); void runOperation("Bill generation", () => apiRequest(`/api/v1/billing/session/${encodeURIComponent(billSessionId)}`, "POST")); }} style={{ display: "grid", gap: 10, padding: 12 }}>
+                    <form onSubmit={(event) => {
+                      event.preventDefault();
+                      void runOperation("Bill generation", async () => {
+                        const result = await apiRequest<Record<string, unknown>>(`/api/v1/billing/session/${encodeURIComponent(billSessionId)}`, "POST");
+                        const generatedId = result.id ?? result.billId;
+                        if (generatedId != null) setPaymentBillId(String(generatedId));
+                        return result;
+                      });
+                    }} style={{ display: "grid", gap: 10, padding: 12 }}>
                       <h3>Generate bill</h3>
-                      <label>Parking session ID<input className="login-input" type="number" min="1" value={billSessionId} onChange={(event) => setBillSessionId(event.target.value)} placeholder="Session ID" required /></label>
-                      <button className="primary-button" type="submit" disabled={operationBusy}><CircleDollarSign size={15} /> Generate bill</button>
+                      <label>Completed parking session
+                        <select className="login-input" value={billSessionId} onChange={(event) => setBillSessionId(event.target.value)} required>
+                          <option value="">Select completed session</option>
+                          {sessions.filter((session) => session.status !== "ACTIVE" && Boolean(session.exitTime)).map((session) => {
+                            const existingBill = bills.find((bill) => bill.sessionId === session.id);
+                            return <option key={session.id} value={String(session.id)}>{`Session #${session.id} · ${session.plateNumber} · ${formatDateTime(session.exitTime)}${existingBill ? " · Bill already exists" : ""}`}</option>;
+                          })}
+                        </select>
+                      </label>
+                      {billSessionId && (() => {
+                        const selected = sessions.find((session) => String(session.id) === billSessionId);
+                        const existingBill = bills.find((bill) => bill.sessionId === Number(billSessionId));
+                        return selected ? <div className="selected-record-details" style={{ padding: 12, border: "1px solid var(--border, #2a2f40)", borderRadius: 10, fontSize: 12, display: "grid", gap: 6 }}>
+                          <strong>{selected.plateNumber} · Session #{selected.id}</strong>
+                          <span>Vehicle ID: {selected.vehicleId}</span>
+                          <span>Entry: {formatDateTime(selected.entryTime)}</span>
+                          <span>Exit: {formatDateTime(selected.exitTime)}</span>
+                          <span>Duration: {formatDuration(selected.durationMinutes)}</span>
+                          {existingBill && <span>Existing bill: {existingBill.billNumber} · {formatMoney(existingBill.totalAmount, existingBill.currency)} · {titleCase(existingBill.status)}</span>}
+                        </div> : null;
+                      })()}
+                      <button className="primary-button" type="submit" disabled={operationBusy || !billSessionId}><CircleDollarSign size={15} /> Generate bill</button>
                     </form>
                     <form onSubmit={(event) => { event.preventDefault(); void runOperation("Create payment", () => apiRequest("/api/v1/payments", "POST", { billId: Number(paymentBillId), provider: paymentProvider })); }} style={{ display: "grid", gap: 10, padding: 12 }}>
                       <h3>Create payment request</h3>
@@ -571,29 +612,29 @@ function App() {
                 <div className="table-wrap">
                   {activePage === "Parking Sessions" ? (
                     <table>
-                      <thead><tr><th>ID</th><th>VEHICLE NUMBER</th><th>ENTRY TIME</th><th>EXIT TIME</th><th>DURATION</th><th>STATUS</th></tr></thead>
+                      <thead><tr><th>SESSION ID</th><th>VEHICLE ID</th><th>VEHICLE NUMBER</th><th>ENTRY DATE &amp; TIME</th><th>EXIT DATE &amp; TIME</th><th>DURATION</th><th>STATUS</th></tr></thead>
                       <tbody>
-                        {filteredSessions.map((session: SessionItem) => <tr key={session.id}><td>#{session.id}</td><td><div className="plate-cell"><div className="car-mini"><CarFront size={17} /></div><strong>{session.plateNumber}</strong></div></td><td className="time-cell">{formatDateTime(session.entryTime)}</td><td className="time-cell">{formatDateTime(session.exitTime)}</td><td><span className="duration-cell"><Clock3 size={14} />{formatDuration(session.durationMinutes)}</span></td><td><span className={`status-badge ${session.status === "ACTIVE" ? "status-parked" : "status-exited"}`}><span />{titleCase(session.status)}</span></td></tr>)}
-                        {filteredSessions.length === 0 && <tr><td colSpan={6} className="empty-state">No session records found.</td></tr>}
+                        {filteredSessions.map((session: SessionItem) => <tr key={session.id}><td><strong>#{session.id}</strong></td><td>{session.vehicleId}</td><td><div className="plate-cell"><div className="car-mini"><CarFront size={17} /></div><strong>{session.plateNumber}</strong></div></td><td className="time-cell">{formatDateTime(session.entryTime)}</td><td className="time-cell">{formatDateTime(session.exitTime)}</td><td><span className="duration-cell"><Clock3 size={14} />{formatDuration(session.durationMinutes)}</span></td><td><span className={`status-badge ${session.status === "ACTIVE" ? "status-parked" : "status-exited"}`}><span />{titleCase(session.status)}</span></td></tr>)}
+                        {filteredSessions.length === 0 && <tr><td colSpan={7} className="empty-state">No session records found.</td></tr>}
                       </tbody>
                     </table>
                   ) : activePage === "Billing & Payments" ? (
                     <table>
-                      <thead><tr><th>BILL NUMBER</th><th>VEHICLE</th><th>DURATION</th><th>AMOUNT</th><th>GENERATED</th><th>STATUS</th></tr></thead>
+                      <thead><tr><th>BILL ID</th><th>BILL NUMBER</th><th>SESSION</th><th>VEHICLE</th><th>DURATION</th><th>AMOUNT</th><th>GENERATED AT</th><th>PAID AT</th><th>STATUS</th></tr></thead>
                       <tbody>
-                        {filteredBills.map((bill: BillItem) => <tr key={bill.id}><td><strong>{bill.billNumber}</strong></td><td><div className="plate-cell"><div className="car-mini"><CarFront size={17} /></div><strong>{bill.plateNumber}</strong></div></td><td><span className="duration-cell"><Clock3 size={14} />{formatDuration(bill.durationMinutes)}</span></td><td>{formatMoney(bill.totalAmount, bill.currency || "INR")}</td><td className="time-cell">{formatDateTime(bill.generatedAt)}</td><td><span className={`status-badge ${bill.status === "PAID" ? "status-parked" : "status-exited"}`}><span />{titleCase(bill.status)}</span></td></tr>)}
-                        {filteredBills.length === 0 && <tr><td colSpan={6} className="empty-state">No bills found.</td></tr>}
+                        {filteredBills.map((bill: BillItem) => <tr key={bill.id}><td>#{bill.id}</td><td><strong>{bill.billNumber}</strong></td><td>#{bill.sessionId}</td><td><div className="plate-cell"><div className="car-mini"><CarFront size={17} /></div><strong>{bill.plateNumber}</strong></div></td><td><span className="duration-cell"><Clock3 size={14} />{formatDuration(bill.durationMinutes)}</span></td><td>{formatMoney(bill.totalAmount, bill.currency || "INR")}</td><td className="time-cell">{formatDateTime(bill.generatedAt)}</td><td className="time-cell">{formatDateTime(bill.paidAt)}</td><td><span className={`status-badge ${bill.status === "PAID" ? "status-parked" : "status-exited"}`}><span />{titleCase(bill.status)}</span></td></tr>)}
+                        {filteredBills.length === 0 && <tr><td colSpan={9} className="empty-state">No bills found.</td></tr>}
                       </tbody>
                     </table>
                   ) : (
                     <table>
-                      <thead><tr><th>VEHICLE NUMBER</th><th>TYPE</th><th>REGISTERED</th><th>ACTIVE</th><th>LAST SESSION</th><th>ACTION</th></tr></thead>
+                      <thead><tr><th>VEHICLE ID</th><th>VEHICLE NUMBER</th><th>TYPE</th><th>REGISTERED DATE &amp; TIME</th><th>ACTIVE</th><th>LAST SESSION</th><th>LAST ENTRY</th><th>LAST EXIT</th><th>ACTION</th></tr></thead>
                       <tbody>
                         {filteredVehicles.map((vehicle: VehicleItem) => {
                           const lastSession = sessions.filter((session) => session.plateNumber === vehicle.plateNumber).sort((a, b) => new Date(b.entryTime).getTime() - new Date(a.entryTime).getTime())[0];
-                          return <tr key={vehicle.id}><td><div className="plate-cell"><div className="car-mini"><CarFront size={17} /></div><strong>{vehicle.plateNumber}</strong></div></td><td><span className="type-cell">{titleCase(vehicle.vehicleType)}</span></td><td className="time-cell">{formatDateTime(vehicle.createdAt)}</td><td><span className={`status-badge ${vehicle.active ? "status-parked" : "status-exited"}`}><span />{vehicle.active ? "Active" : "Inactive"}</span></td><td>{lastSession ? <span className={`status-badge ${lastSession.status === "ACTIVE" ? "status-parked" : "status-exited"}`}><span />{titleCase(lastSession.status)}</span> : "No session"}</td><td><button className="row-action" onClick={() => { setQuery(vehicle.plateNumber); setActivePage("Vehicles"); }}>Filter <ArrowUpRight size={14} /></button></td></tr>;
+                          return <tr key={vehicle.id}><td>#{vehicle.id}</td><td><div className="plate-cell"><div className="car-mini"><CarFront size={17} /></div><strong>{vehicle.plateNumber}</strong></div></td><td><span className="type-cell">{titleCase(vehicle.vehicleType)}</span></td><td className="time-cell">{formatDateTime(vehicle.createdAt)}</td><td><span className={`status-badge ${vehicle.active ? "status-parked" : "status-exited"}`}><span />{vehicle.active ? "Active" : "Inactive"}</span></td><td>{lastSession ? <span className={`status-badge ${lastSession.status === "ACTIVE" ? "status-parked" : "status-exited"}`}><span />{titleCase(lastSession.status)}</span> : "No session"}</td><td className="time-cell">{formatDateTime(lastSession?.entryTime)}</td><td className="time-cell">{formatDateTime(lastSession?.exitTime)}</td><td><button className="row-action" onClick={() => { setQuery(vehicle.plateNumber); setActivePage("Vehicles"); }}>Filter <ArrowUpRight size={14} /></button></td></tr>;
                         })}
-                        {filteredVehicles.length === 0 && <tr><td colSpan={6} className="empty-state">No vehicle records found.</td></tr>}
+                        {filteredVehicles.length === 0 && <tr><td colSpan={9} className="empty-state">No vehicle records found.</td></tr>}
                       </tbody>
                     </table>
                   )}
